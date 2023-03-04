@@ -1,0 +1,193 @@
+---
+title: "Data Visualization"
+output: html_document
+date: "2023-03-04"
+---
+
+# Data Visualization
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Required Packages
+
+```{r warning=FALSE, include=FALSE}
+
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load("dplyr", "foreign", "readxl", "tidyr", "rstatix", "tidyverse", "ggpubr", "lme4", "lmerTest", "car", "haven")
+
+#options(scipen=0) # yes scientific notation
+#options(scipen=999) # no scientific notation
+
+```
+
+
+```{r}
+library(palmerpenguins)
+penguins
+glimpse(penguins)
+ggplot(data = penguins)
+```
+Next, we need to tell ggplot() how the information from our data will be visually represented. The mapping argument of the ggplot() function defines how variables in your dataset are mapped to visual properties (aesthetics) of your plot. 
+
+```{r}
+ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g))
+```
+
+We need to define a geom: the geometrical object that a plot uses to represent data. These geometric objects are made available in ggplot2 with functions that start with geom_.
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point()
+
+```
+When a categorical variable is mapped to an aesthetic, ggplot2 will automatically assign a unique value of the aesthetic (here a unique color) to each unique level of the variable (each of the three species), a process known as scaling.
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)
+) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+When aesthetic mappings are defined in ggplot(), at the global level, they’re passed down to each of the subsequent geom layers of the plot. However, each geom function in ggplot2 can also take a mapping argument, which allows for aesthetic mappings at the local level that are added to those inherited from the global level. Since we want points to be colored based on species but don’t want the lines to be separated out for them, we should specify color = species for geom_point() only.
+
+```{r}
+ggplot(penguins,
+       aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species)) +
+  geom_smooth(method = "lm")
+```
+It’s generally not a good idea to represent information using only colors on a plot, as people perceive colors differently due to color blindness or other color vision differences. Therefore, in addition to color, we can also map species to the shape aesthetic.
+
+```{r}
+ggplot(penguins,
+       aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species)) +
+  geom_smooth(method = "lm")
+```
+
+And finally, we can improve the labels of our plot using the labs() function in a new layer. Some of the arguments to labs() might be self explanatory: title adds a title and subtitle adds a subtitle to the plot. Other arguments match the aesthetic mappings, x is the x-axis label, y is the y-axis label, and color and shape define the label for the legend. In addition, we can improve the color palette to be colorblind safe with the scale_color_colorblind() function from the ggthemes package.
+
+```{r}
+ggplot(penguins,
+       aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper length (mm)", y = "Body mass (g)",
+    color = "Species", shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+# Exercises
+
+1. How many rows are in penguins? How many columns?
+- Rows = 344
+- Columns = 8
+
+2. What does the bill_depth_mm variable in the penguins data frame describe? Read the help for ?penguins to find out.
+
+```{r}
+?penguins
+```
+
+- bill_depth_mm = a number denoting bill depth (millimeters)
+
+3. Make a scatterplot of bill_depth_mm vs. bill_length_mm. That is, make a scatterplot with bill_depth_mm on the y-axis and bill_length_mm on the x-axis. Describe the relationship between these two variables.
+
+```{r}
+ggplot(penguins,
+       aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species)) 
+```
+- Positive relationship, as length increases so does depth.
+
+4. What happens if you make a scatterplot of species vs. bill_depth_mm? What might be a better choice of geom?
+
+```{r}
+ggplot(penguins,
+       aes(x =  bill_depth_mm)) +
+  geom_histogram(aes(fill = species)) 
+```
+- Plot comes out wonky.
+- geom_bar or geom_histogram
+
+5. Why does the following give an error and how would you fix it?
+
+```{r}
+ggplot(data = penguins) + 
+  geom_point()
+# Missing x and y values
+```
+
+6. What does the na.rm argument do in geom_point()? What is the default value of the argument? Create a scatterplot where you successfully use this argument set to TRUE.
+- If FALSE, the default, missing values are removed with a warning. If TRUE, missing values are silently removed.
+
+7. Add the following caption to the plot you made in the previous exercise: “Data come from the palmerpenguins package.” Hint: Take a look at the documentation for labs()
+
+```{r}
+ggplot(penguins,
+       aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species)) +
+  labs(caption = "Data come from the palmerpenguins package.")
+```
+
+8. Recreate the following visualization. What aesthetic should bill_depth_mm be mapped to? And should it be mapped at the global level or at the geom level?
+
+```{r}
+
+ggplot(penguins,
+       aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = bill_depth_mm)) +
+  geom_smooth()
+```
+
+9. Run this code in your head and predict what the output will look like. Then, run the code in R and check your predictions.
+
+```{r}
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = island)
+) +
+  geom_point() +
+  geom_smooth(se = FALSE)
+
+```
+
+10. Will these two graphs look different? Why/why not?
+
+```{r}
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point() +
+  geom_smooth()
+
+ggplot() +
+  geom_point(
+    data = penguins,
+    mapping = aes(x = flipper_length_mm, y = body_mass_g)
+  ) +
+  geom_smooth(
+    data = penguins,
+    mapping = aes(x = flipper_length_mm, y = body_mass_g)
+  )
+
+penguins |> 
+  ggplot(aes(x = bill_depth_mm)) +
+  geom_bar()
+
+
+- I think they will be the same because each geom is getting passed the same variables just locally (instead of globally in ggplot)
